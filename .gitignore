@@ -26,3 +26,7 @@ _targets/
 
 # Documentations
 docs/*
+
+
+# Renv
+renv.lock
