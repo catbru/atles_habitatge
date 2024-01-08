@@ -4,7 +4,7 @@ library(tarchetypes)
 source('R/idealista_functions.R')
 
 tar_option_set(packages =
-  c('readr','dplyr','tidyr','lubridate','stringr','ggplot2','mapSpain','quarto')
+  c('readr','dplyr','tidyr','lubridate','stringr','ggplot2')
 )
 
 list(
