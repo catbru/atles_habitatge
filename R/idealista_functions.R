@@ -1,14 +1,15 @@
 
 read_data_catalunya <- function(file) {
-  read_delim(
+  read_csv(
     file,
-    delim = ";",
-    escape_double = FALSE,
-    col_types = cols(...1 = col_skip()),
-    locale = locale(
-      decimal_mark = ",",
-      grouping_mark = "."),
-    trim_ws = TRUE)
-
+    col_types = cols(...1 = col_skip(), period = col_date(format = "%Y-%m-%d"))
+  ) |>
+    filter(province %in%
+      c("Barcelona","Girona","Lleida","Tarragona")
+    )
 }
+
+
+
+
 
