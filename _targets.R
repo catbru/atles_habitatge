@@ -19,8 +19,6 @@ list(
   )
 )
 
-# miau prova
-
 
 
 
