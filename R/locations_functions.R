@@ -190,7 +190,6 @@ get_locations <- function(barris, municipis, comarques, provincies) {
   bind_rows(locations_barris, locations_munis, locations_comarques, locations_provincies)
 }
 
-
 get_locations_as_tibble <- function(locations_map) {
   locations_map |> as_tibble() |> select(-geometry)
 }

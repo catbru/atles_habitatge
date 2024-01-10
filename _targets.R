@@ -65,6 +65,10 @@ list(
   tar_target(
     locations,
     get_locations_as_tibble(locations_map)
+  ),
+  tar_target(
+    idealista_municipis_prices_loc_wide,
+    get_idealista_municipis_prices_loc_wide(idealista_preus_catalunya)
   )
 )
 
