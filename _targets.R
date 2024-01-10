@@ -59,8 +59,12 @@ list(
     get_barris(barris_AMB, barris_girona)
   ),
   tar_target(
-    locations,
+    locations_map,
     get_locations(barris, municipis, comarques, provincies)
+  ),
+  tar_target(
+    locations,
+    get_locations_as_tibble(locations_map)
   )
 )
 
