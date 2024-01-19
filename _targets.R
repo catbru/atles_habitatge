@@ -5,10 +5,10 @@ source('R/idealista_functions.R')
 source('R/locations_functions.R')
 
 tar_option_set(packages =
-  c('readr','dplyr','tidyr','lubridate','stringr','ggplot2','mapSpain')
+  c('readr','dplyr','tidyr','lubridate','stringr','ggplot2','mapSpain','readxl')
 )
 
-list(
+pipe_idealista <- list(
   tar_target(
     idealista_prices_file,
     "data/20231229_locations_with_price_evolution.csv",
@@ -18,6 +18,26 @@ list(
     idealista_preus_catalunya,
     read_data_catalunya(idealista_prices_file)
   ),
+  tar_target(
+    idealista_municipis_prices_loc_wide,
+    get_idealista_municipis_prices_loc_wide(idealista_preus_catalunya)
+  ),
+  tar_target(
+    idealista_municipis_stock_loc_wide,
+    get_idealista_municipis_stock_loc_wide(idealista_preus_catalunya)
+  ),
+  tar_target(
+    idealista_barris_bcn_prices_loc_wide,
+    get_idealista_barris_bcn_prices_loc_wide(idealista_preus_catalunya)
+  ),
+  tar_target(
+    idealista_barris_bcn_stock_loc_wide,
+    get_idealista_barris_bcn_stock_loc_wide(idealista_preus_catalunya)
+  )
+)
+
+
+pipe_map <- list(
   tar_target(
     municipis_mapSpain,
     get_municipis_mapSpain()
@@ -65,14 +85,13 @@ list(
   tar_target(
     locations,
     get_locations_as_tibble(locations_map)
-  ),
-  tar_target(
-    idealista_municipis_prices_loc_wide,
-    get_idealista_municipis_prices_loc_wide(idealista_preus_catalunya)
   )
 )
 
-
+c(
+  pipe_idealista,
+  pipe_map
+)
 
 
 
