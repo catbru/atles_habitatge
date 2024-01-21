@@ -3,10 +3,13 @@ library(tarchetypes)
 
 source('R/idealista_functions.R')
 source('R/locations_functions.R')
+source('R/incasol_functions.R')
+source('R/mitma_functions.R')
 
-tar_option_set(packages =
-  c('readr','dplyr','tidyr','lubridate','stringr','ggplot2','mapSpain','readxl')
-)
+libraries <- c('readr','dplyr','tidyr','lubridate',
+  'stringr','ggplot2','mapSpain','readxl')
+
+tar_option_set(packages = libraries)
 
 pipe_idealista <- list(
   tar_target(
@@ -90,7 +93,25 @@ pipe_map <- list(
 
 c(
   pipe_idealista,
-  pipe_map
+  pipe_map,
+  list(
+    tar_target(
+      incasol_lloguer_trimestral_barris_BCN_m2,
+      get_incasol_lloguer_trimestral_barris_BCN_m2()
+    ),
+    tar_target(
+      incasol_lloguer_trimestral_municipis,
+      get_incasol_lloguer_trimestral_municipis()
+    ),
+    tar_target(
+      mitma_indice_alquiler_vivienda,
+      get_indice_alquiler_vivienda()
+    ),
+    tar_target(
+      gene_habitatges_tensionats,
+      get_habitatges_tensionats()
+    )
+  )
 )
 
 

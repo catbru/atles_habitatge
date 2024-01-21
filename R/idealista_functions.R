@@ -164,12 +164,19 @@ get_idealista_barris_bcn_prices_loc_wide <- function(df) {
       barri_codi_idealista,
       periode = 'mensual',
       data_inici = lubridate::floor_date(period, 'month'),
+      data_fi = data_inici + months(1) - days(1),
       idealista_sale_price = sale,
       idealista_rent_price = rent
     ) |> 
     left_join(matching_codis_barris_bcn |> select(-barri_nom))
 }
 
+get_idealista_barris_bcn_prices_newest_row <- function(df) {
+  df |> 
+    arrange(desc(data_fi)) |> 
+    group_by(provincia_codi, municipi_codi, barri_codi) |> 
+    slice(1)
+}
 
 get_idealista_barris_bcn_stock_loc_wide <- function(df) {
   df |>
