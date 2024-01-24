@@ -49,9 +49,18 @@ get_idealista_municipis_prices_loc_wide <- function(df) {
       municipi_codi,
       periode = 'mensual',
       data_inici = lubridate::floor_date(period, 'month'),
+      data_fi = as.Date(data_inici + lubridate::dmonths(1) - lubridate::ddays(1)),
       idealista_sale_price = sale,
       idealista_rent_price = rent
     )
+}
+
+get_idealista_municipis_prices_newest_row <- function(df) {
+  df |>
+    group_by(provincia_codi, municipi_codi) |>
+    arrange(desc(data_fi)) |>
+    filter(row_number()==1) |>
+    ungroup()
 }
 
 get_idealista_municipis_stock_loc_wide <- function(df) {
@@ -142,7 +151,7 @@ matching_codis_barris_bcn <- tibble::tribble(
 get_idealista_barris_bcn_prices_loc_wide <- function(df) {
   df |>
     filter(level == 'neighborhood') |>
-    filter(town == 'Barcelona') |> 
+    filter(town == 'Barcelona') |>
     transmute(
       municipi_codi = str_sub(location_id, start = 19, end = 21),
       provincia_codi = str_sub(location_id, start = 9, end = 10),
@@ -167,21 +176,22 @@ get_idealista_barris_bcn_prices_loc_wide <- function(df) {
       data_fi = data_inici + months(1) - days(1),
       idealista_sale_price = sale,
       idealista_rent_price = rent
-    ) |> 
+    ) |>
     left_join(matching_codis_barris_bcn |> select(-barri_nom))
 }
 
 get_idealista_barris_bcn_prices_newest_row <- function(df) {
-  df |> 
-    arrange(desc(data_fi)) |> 
-    group_by(provincia_codi, municipi_codi, barri_codi) |> 
-    slice(1)
+  df |>
+    group_by(provincia_codi, municipi_codi, barri_codi) |>
+    arrange(desc(data_fi)) |>
+    filter(row_number()==1) |>
+    ungroup()
 }
 
 get_idealista_barris_bcn_stock_loc_wide <- function(df) {
   df |>
     filter(level == 'neighborhood') |>
-    filter(town == 'Barcelona') |> 
+    filter(town == 'Barcelona') |>
     transmute(
       municipi_codi = str_sub(location_id, start = 19, end = 21),
       provincia_codi = str_sub(location_id, start = 9, end = 10),
@@ -193,6 +203,6 @@ get_idealista_barris_bcn_stock_loc_wide <- function(df) {
       idealista_stock_ads_sale = stock_ads_sale, # a data de de l'scraping
       idealista_stock_ads_rent = stock_ads_rent # a data de de l'scraping
     ) |>
-    distinct() |> 
+    distinct() |>
     left_join(matching_codis_barris_bcn |> select(-barri_nom))
 }
