@@ -104,10 +104,9 @@ get_incasol_lloguer_trimestral_barris_bcn <- function() {
   }
   trimestral_bcn_lloguer |>
     mutate(
-      data_fi = ifelse(
-        periode == 'trimestral',
-        data_inici + months(3) - days(1),
-        data_inici + months(12) - days(1)
+      data_fi = case_when(
+        periode == 'trimestral' ~ data_inici + months(3) - days(1),
+        TRUE ~ data_inici + months(12) - days(1)
       )
     ) |>
     filter(!is.na(incasol_lloguer))
@@ -130,8 +129,8 @@ get_incasol_lloguer_trimestral_municipis <- function() {
   lloguer_trimestral_municipis <- read_csv(destfile)
   lloguer_trimestral_municipis |>
     transmute(
-      municipi_codi = stringr::str_extract('17009','...$'),
-      provincia_codi = stringr::str_extract('17009','..'),
+      municipi_codi = stringr::str_extract(`Codi territorial`,'...$'),
+      provincia_codi = stringr::str_extract(`Codi territorial`,'..'),
       periode = 'pseudotrimestral',
       data_inici = case_when(
         Període == 'gener-setembre' ~ ymd(paste0(as.character(Any), '-01-01')),
@@ -143,13 +142,13 @@ get_incasol_lloguer_trimestral_municipis <- function() {
         Període == 'octubre-desembre' ~ ymd(paste0(as.character(Any), '-10-01'))
       ),
       data_fi = case_when(
-        Període == 'gener-setembre' ~ paste0(as.character(Any), '-09-30'),
-        Període == 'juliol-setembre' ~ paste0(as.character(Any), '-09-30'),
-        Període == 'abril-juny' ~ paste0(as.character(Any), '-06-30'),
-        Període == 'gener-juny' ~ paste0(as.character(Any), '-06-30'),
-        Període == 'gener-març' ~ paste0(as.character(Any), '-03-31'),
-        Període == 'gener-desembre' ~ paste0(as.character(Any), '-12-31'),
-        Període == 'octubre-desembre' ~ paste0(as.character(Any), '-12-31')
+        Període == 'gener-setembre' ~ ymd(paste0(as.character(Any), '-09-30')),
+        Període == 'juliol-setembre' ~ ymd(paste0(as.character(Any), '-09-30')),
+        Període == 'abril-juny' ~ ymd(paste0(as.character(Any), '-06-30')),
+        Període == 'gener-juny' ~ ymd(paste0(as.character(Any), '-06-30')),
+        Període == 'gener-març' ~ ymd(paste0(as.character(Any), '-03-31')),
+        Període == 'gener-desembre' ~ ymd(paste0(as.character(Any), '-12-31')),
+        Període == 'octubre-desembre' ~ ymd(paste0(as.character(Any), '-12-31'))
       ),
       incasol_lloguer = Renda,
       incasol_nous_llogers = Habitatges

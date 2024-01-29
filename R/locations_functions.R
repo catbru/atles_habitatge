@@ -129,13 +129,13 @@ get_barris <- function(barris_AMB, barris_girona) {
 get_locations <- function(barris, municipis, comarques, provincies) {
   locations_barris <- barris |>
     mutate(
-      iden = paste0('BARR',barri_codi),
       nom = barri_nom,
       nivell = 'barri',
       .before = barri_nom) |>
     left_join(municipis |> as_tibble() |> select(-geometry)) |>
     left_join(comarques |> as_tibble() |> select(-geometry)) |>
     left_join(provincies |> as_tibble() |> select(-geometry)) |>
+    mutate(iden = paste0('BARR',barri_codi, municipi_codi)) |>
     dplyr::relocate(geometry, .after = last_col())
 
   locations_munis <- municipis |>

@@ -7,9 +7,9 @@ get_indice_alquiler_vivienda <- function() {
   destfile <- "2023-02-07_bd_sistema-indices-alquiler-vivienda_2015-2021.xlsx"
   curl::curl_download(url, destfile)
   indice_alquiler_vivienda <- read_excel(destfile, skip = 0,sheet = 'Municipios')
-  indice_alquiler_vivienda |> 
+  indice_alquiler_vivienda |>
     transmute(
-      municipi_codi = CUMUN_A,
+      municipi_codi = stringr::str_extract(CUMUN_A,'...$'),
       provincia_codi = CPRO_A,
       periode = 'anual',
       data_inici = ymd('2021-01-01'),
@@ -32,10 +32,10 @@ get_indice_alquiler_vivienda <- function() {
 # https://govern.cat/govern/docs/2023/08/16/12/59/be087251-45ab-4a89-9600-df22e51e16a0.pdf
 get_habitatges_tensionats <- function() {
   read_delim(
-    "data/mitma_generalitat_municipis_tensionats.csv", 
-     delim = "\t", escape_double = FALSE, 
-     locale = locale(encoding = "ISO-8859-1"), 
-     trim_ws = TRUE) |> 
+    "data/mitma_generalitat_municipis_tensionats.csv",
+     delim = "\t", escape_double = FALSE,
+     locale = locale(encoding = "ISO-8859-1"),
+     trim_ws = TRUE) |>
   transmute(
     municipi_codi_idescat = Codi,
     municipi_declarat_tensionat_2023 = 1

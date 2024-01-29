@@ -8,7 +8,7 @@ source('R/mitma_functions.R')
 source('R/atles_functions.R')
 
 libraries <- c('readr','dplyr','tidyr','lubridate',
-  'stringr','ggplot2','mapSpain','readxl')
+  'stringr','ggplot2','mapSpain','readxl','stringi')
 
 tar_option_set(packages = libraries)
 
