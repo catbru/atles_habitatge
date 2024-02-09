@@ -50,5 +50,6 @@ get_atles_newest_values_map <- function(
         incasol_lloguer_trimestral_barris_bcn_newest |> select(-periode, -data_inici, -data_fi, -barri_nom_incasol)
       )
     ) |>
+    mutate(esforc_acces_25k_anuals = round(((incasol_lloguer*12)/25000)*100),1) |>
     sf::st_as_sf()
 }

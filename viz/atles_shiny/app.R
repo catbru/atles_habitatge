@@ -1,20 +1,54 @@
 ## app.R ##
 library(shiny)
 library(leaflet)
-library(shinythemes)
 library(tidyr)
 library(dplyr)
 library(lubridate)
 library(shinydashboard)
 library(plotly)
 library(logger)
+library(sf)
+library(fresh) # custom theme
+library(shinydashboardPlus)
+
+mytheme <- create_theme(
+  adminlte_color(
+    light_blue = "black"
+  ),
+  adminlte_sidebar(
+    width = "300px",
+    dark_bg = "#D8DEE9",
+    dark_hover_bg = "#81A1C1",
+    dark_color = "#2E3440",
+  ),
+  adminlte_global(
+    content_bg = "#FFF",
+    box_bg = "#D8DEE9",
+    info_box_bg = "#D8DEE9"
+  )
+)
 
 
 header <- dashboardHeader(
-  title = "Atles de l'Habitatge"
-)
+  title = "SLL"
+) |>
+  tagAppendChild(
+    div(
+      "Atles de l'habitatge",
+      style = "
+      display: block;
+      font-size: 1.5em;
+      margin-block-start: 0.5em;
+      color: white;
+      font-weight: bold;
+      margin-right: 50%",
+      align = "right"
+    ),
+    .cssSelector = "nav"
+  )
 
 sidebar <- dashboardSidebar(
+  collapsed = TRUE,
   sidebarMenu(
     menuItem("Situació del lloguer", tabName = "landpage", icon = icon("map"))
   )
@@ -25,47 +59,66 @@ mapa_pincipal <- tabItem(
   fluidRow(
     column(
       # leaflet map
-      width = 8,
-      leafletOutput(outputId = "map", width = "100%", height = "600px")
+      width = 6,
+      tags$style(type = "text/css", ".outer {position: fixed; top: 41px; left: 0; right: 0; bottom: 0; overflow: hidden; padding: 0}"),
+      leafletOutput("map", width = "100%", height = '655px'),
     ),
     column(
       # pastilla info
-      width = 4,
-      textOutput("nom_lloc"),
-      textOutput("poligonId"),
-      valueBox(70, "Salari", icon = icon("percent", lib = "font-awesome")),
-      valueBox(17.67, "Metre quadrat", icon = icon("euro-sign", lib = "font-awesome")),
-      valueBox(0, "Protegit", icon = icon("thumbs-up", lib = "font-awesome")),
-      plotlyOutput("rent_price_evolution_graph")
+      width = 6,
+      fluidRow(
+      titlePanel(
+        h1(textOutput("nom_lloc"), align = "center")
+      )),
+      fluidRow(
+        valueBoxOutput("esforc_acces_25k_anuals_box"),
+        valueBoxOutput('idealista_rent_price_m2_box'),
+        valueBoxOutput('incasol_lloguer_actual_box')
+      ),
+      fluidRow(
+        h3(textOutput("instruccions_inicials"), align = "center"),
+        plotlyOutput("rent_price_evolution_graph")
+      )
     )
   )
 )
 
-body <- dashboardBody(
-  tabItems(
-    mapa_pincipal
-  )
-)
 
 ui <- dashboardPage(
-  header,
-  sidebar,
-  dashboardBody(
+  header = header,
+  sidebar = sidebar,
+  body = dashboardBody(
+    #use_theme(mytheme),
+    includeCSS(path = 'www/custom.css'),
     tabItems(
       mapa_pincipal
     )
+  ),
+  footer = dashboardFooter(
+    left = tags$a(href='https://t.me/sindicatlloguer',
+                  'Uneix-te al nostre canal de Telegram', class = 'text-footer'),
+    right = tags$a(href='https://sindicatdellogateres.org/',
+                   tags$img(src='sindicat.svg',width='50'))
   )
 )
 
 server <- function(input, output, session) {
   generate_rdata <- function() {
-    atles_newest_values_map <<- targets::tar_read("atles_newest_values_map") |>
-      mutate(incasol_lloguer = ifelse(incasol_lloguer == 0, NA, incasol_lloguer))
+    atles_newest_values_map <<- targets::tar_read("atles_newest_values_map")
     incasol_lloguer_trimestral_municipis <<- targets::tar_read("incasol_lloguer_trimestral_municipis")
     incasol_lloguer_trimestral_barris_bcn <<- targets::tar_read("incasol_lloguer_trimestral_barris_bcn")
     idealista_municipis_prices_loc_wide <<- targets::tar_read("idealista_municipis_prices_loc_wide")
     idealista_barris_bcn_prices_loc_wide <<- targets::tar_read("idealista_barris_bcn_prices_loc_wide")
     atles_base_map_munis_i_bcn_barris <<- targets::tar_read("atles_base_map_munis_i_bcn_barris")
+    save(
+      atles_newest_values_map,
+      incasol_lloguer_trimestral_municipis,
+      incasol_lloguer_trimestral_barris_bcn,
+      idealista_municipis_prices_loc_wide,
+      idealista_barris_bcn_prices_loc_wide,
+      atles_base_map_munis_i_bcn_barris,
+      file = "viz/atles_shiny/data/data.RData"
+    )
   }
 
   load("data/data.RData")
@@ -88,22 +141,27 @@ server <- function(input, output, session) {
   ) |>
     left_join(atles_base_map_munis_i_bcn_barris)
 
+  ## Instruccions inicials
+  output$instruccions_inicials <- renderText(
+    "Selecciona una unitat territorial per visualitzar-ne les dades disponibles"
+  )
+
   ## REACTIVITAT
   rv <- reactiveVal()
   observeEvent(input$map_shape_click, {rv(input$map_shape_click$id)})
   output$poligonId <- renderText({rv()})
 
   ## MAPA
-  domain = min(atles_newest_values_map$incasol_lloguer,na.rm = T):max(atles_newest_values_map$incasol_lloguer,na.rm = T)
-  pal <- colorQuantile("inferno", domain=domain, n=12)
+  domain <- min(atles_newest_values_map$esforc_acces_25k_anuals,na.rm = T):max(atles_newest_values_map$esforc_acces_25k_anuals,na.rm = T)
+  pal <- colorBin("magma", domain=domain, pretty = T,na.color = '#FF000000')
   output$map <- renderLeaflet({
     leaflet(data = atles_newest_values_map) %>%
       addTiles() %>%
       addPolygons(
-        stroke = T, smoothFactor = 0.3, fillOpacity = 0.6,
+        stroke = F, smoothFactor = 0.3, fillOpacity = 0.6,
         weight = 0.4,
-        fillColor = ~ pal(incasol_lloguer),
-        label = ~ paste0(nom, ": ", formatC(incasol_lloguer, big.mark = ",")),
+        fillColor = ~ pal(esforc_acces_25k_anuals),
+        label = ~ paste0(nom, ": ", formatC(esforc_acces_25k_anuals, big.mark = ",")),
         layerId = ~iden
       )
   })
@@ -111,7 +169,6 @@ server <- function(input, output, session) {
   ## RENT PRICE GRAPH
   plot_rent_price_evolution_graph <- function(codi_exemple) {
     log_info(paste("plot_rent_price_evolution_graph", as.character(codi_exemple)))
-
 
     data <- incasol_lloguer_trimestral |> filter(iden == codi_exemple)
     data_idealista <- idealista_prices |> filter(iden == codi_exemple)
@@ -143,7 +200,8 @@ server <- function(input, output, session) {
         yaxis = list(title = "<b>incasol</b> preu lloguer mitjà")
       ) %>%
       layout(
-        plot_bgcolor = "#e5ecf6",
+        plot_bgcolor = "#ecf0f5",
+        paper_bgcolor = "#ecf0f5",
         xaxis = list(
           zerolinecolor = "#ffff",
           zerolinewidth = 2,
@@ -153,10 +211,6 @@ server <- function(input, output, session) {
           zerolinecolor = "#ffff",
           zerolinewidth = 2,
           gridcolor = "ffff"
-        ),
-        shapes = list(
-          hline(mitma_lloguer_mitja_p25_habitatge_collectiu),
-          hline(mitma_lloguer_mitja_p75_habitatge_collectiu)
         )
       )
 
@@ -196,6 +250,7 @@ server <- function(input, output, session) {
   observeEvent(
     input$map_shape_click,
     {
+      output$instruccions_inicials <- renderText('')
       barri_nom <- atles_newest_values_map$barri_nom[atles_newest_values_map$iden == rv()]
       municipi_nom <- atles_newest_values_map$municipi_nom[atles_newest_values_map$iden == rv()]
       provincia_nom <- atles_newest_values_map$provincia_nom[atles_newest_values_map$iden == rv()]
@@ -203,12 +258,38 @@ server <- function(input, output, session) {
       idealista_rent_price_m2 <- atles_newest_values_map$idealista_rent_price[atles_newest_values_map$iden == rv()]
       idealista_sale_price_m2 <- atles_newest_values_map$idealista_sale_price[atles_newest_values_map$iden == rv()]
       incasol_lloguer_actual <- atles_newest_values_map$incasol_lloguer[atles_newest_values_map$iden == rv()]
-      esforc_acces_25k_anuals <- ((incasol_lloguer_actual*12)/25000)*100
+      esforc_acces_25k_anuals <- atles_newest_values_map$esforc_acces_25k_anuals[atles_newest_values_map$iden == rv()]
+
+      output$esforc_acces_25k_anuals_box <- renderValueBox({
+        valueBox(
+          paste(esforc_acces_25k_anuals, "%"), "d'un salari de 25k anual", icon = icon("briefcase", lib='font-awesome'),
+          color = "red"
+        )
+      })
+
+      output$idealista_rent_price_m2_box <- renderValueBox({
+        valueBox(
+          paste(
+            ifelse(is.na(idealista_rent_price_m2), '', idealista_rent_price_m2),
+            "€/m2"), "Mitjana anuncis d'Idealista", icon = icon("building", lib='font-awesome'),
+          color = "red"
+        )
+      })
+
+      output$incasol_lloguer_actual_box <- renderValueBox({
+        valueBox(
+          paste(round(incasol_lloguer_actual,2), "€"), "Mitjana lloguer segons Incasol", icon = icon("tag", lib='font-awesome'),
+          color = "red"
+        )
+      })
+
+
       municipi_declarat_tensionat_2023 <- ifelse(
         atles_newest_values_map$municipi_declarat_tensionat_2023[atles_newest_values_map$iden == rv()] == 1,
         'Sí',
         'No'
       )
+
       output$nom_lloc <- renderText({
         log_info(paste("barri_nom", as.character(barri_nom)))
         log_info(paste("municipi_nom", as.character(municipi_nom)))
@@ -218,7 +299,8 @@ server <- function(input, output, session) {
           paste(municipi_nom, provincia_nom, sep = ', ')
         )
       })
-    },
+
+      },
     ignoreInit = TRUE
   )
 
