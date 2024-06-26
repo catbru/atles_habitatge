@@ -2,7 +2,6 @@
 
 L'Atles de l'Habitatge és un projecte del Sindicat de Llogateres que pretén recollir les dades disponibles públicament relacionades amb l'habitatge a Catalunya.
 
-
 ## Directoris i fitxers:
 
 -   `_targets.R`: És el fitxer índex del projecte targets. Conté la definició del pipeline.
@@ -12,7 +11,6 @@ L'Atles de l'Habitatge és un projecte del Sindicat de Llogateres que pretén re
 -   `docs/`: Conté els fitxers de documentació del projecte.
 -   `renv.lock`: Fitxer generat automàticament per Renv que conté la llista de paquests necessaris per executar el projecte. Aquest fitxer és el que llegeix la comanda `renv::restore()` Per crear l'entron d'R.
 -   `.gitignore` Fitxer que utilitza GIT per saber quins fitxers ha d'ignorar, és a dir no pujar al repositori quan guardes el codi.
-
 
 ## Setup
 
