@@ -9,6 +9,7 @@ get_lloguer_trimestral_barris_AMB_m2 <- function() {
   destfile <- "AMB_lloguer_m2.xlsx"
   curl::curl_download(url, destfile)
   AMB_lloguer_m2 <- read_excel(destfile, skip = 5)
+  if (file.exists(destfile)) file.remove(destfile)
   AMB_lloguer_m2
 }
 
@@ -54,6 +55,9 @@ get_incasol_lloguer_trimestral_barris_BCN_m2 <- function() {
       filter(!is.na(barri_codi))
     rm(tmp)
   }
+  
+  if (file.exists(destfile)) file.remove(destfile)
+  
   trimestral_bcn_lloguer_m2 |>
     mutate(
       data_fi = ifelse(
@@ -102,6 +106,9 @@ get_incasol_lloguer_trimestral_barris_bcn <- function() {
       filter(!is.na(barri_codi))
     rm(tmp)
   }
+  
+  if (file.exists(destfile)) file.remove(destfile)
+  
   trimestral_bcn_lloguer |>
     mutate(
       data_fi = case_when(
@@ -127,6 +134,7 @@ get_incasol_lloguer_trimestral_municipis <- function() {
   destfile <- "lloguer_trimestral_municipis.csv"
   curl::curl_download(url, destfile)
   lloguer_trimestral_municipis <- read_csv(destfile)
+  if (file.exists(destfile)) file.remove(destfile)
   lloguer_trimestral_municipis |>
     transmute(
       municipi_codi = stringr::str_extract(`Codi territorial`,'...$'),

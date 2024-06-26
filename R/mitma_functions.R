@@ -7,6 +7,7 @@ get_indice_alquiler_vivienda <- function() {
   destfile <- "2023-02-07_bd_sistema-indices-alquiler-vivienda_2015-2021.xlsx"
   curl::curl_download(url, destfile)
   indice_alquiler_vivienda <- read_excel(destfile, skip = 0,sheet = 'Municipios')
+  file.remove(destfile)
   indice_alquiler_vivienda |>
     transmute(
       municipi_codi = stringr::str_extract(CUMUN_A,'...$'),
