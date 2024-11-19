@@ -25,8 +25,10 @@ get_incasol_lloguer_trimestral_barris_BCN_m2 <- function() {
   sheets <- readxl::excel_sheets(destfile)
 
   trimestral_bcn_lloguer_m2 = tibble()
+  
+  current_year <- max(excel_sheets(path = destfile) |> as.numeric())
 
-  for (i in as.character(2014:2023)) {
+  for (i in as.character(2014:current_year)) {
     tmp <- read_excel(destfile, skip = 19, sheet = i) |>
       transmute(
         barri_codi = sprintf("%02d", as.numeric(`...1`)),
@@ -76,8 +78,10 @@ get_incasol_lloguer_trimestral_barris_bcn <- function() {
   sheets <- readxl::excel_sheets(destfile)
 
   trimestral_bcn_lloguer = tibble()
+  
+  current_year <- max(excel_sheets(path = destfile) |> as.numeric())
 
-  for (i in as.character(2014:2023)) {
+  for (i in as.character(2014:current_year)) {
     tmp <- read_excel(destfile, skip = 19, sheet = i) |>
       transmute(
         barri_codi = sprintf("%02d", as.numeric(`...1`)),

@@ -14,13 +14,18 @@ tar_option_set(packages = libraries)
 
 pipe_idealista <- list(
   tar_target(
-    idealista_prices_file,
+    idealista_prices_file_current,
+    "data/idealista_api_dades_joan.rds",
+    format = "file"
+  ),
+  tar_target(
+    idealista_prices_file_reference,
     "data/20231229_locations_with_price_evolution.csv",
     format = "file"
   ),
   tar_target(
     idealista_preus_catalunya,
-    read_data_catalunya(idealista_prices_file)
+    read_data_catalunya(idealista_prices_file_reference, idealista_prices_file_current)
   ),
   tar_target(
     idealista_municipis_prices_loc_wide,
@@ -77,7 +82,8 @@ pipe_map <- list(
   ),
   tar_target(
     provincies,
-    get_provincies()
+    get_provincies(),
+    error = 'null'
   ),
   tar_target(
     barris_AMB,

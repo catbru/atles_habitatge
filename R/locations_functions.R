@@ -77,7 +77,8 @@ get_comarques <- function() {
 }
 
 get_provincies <- function() {
-  mapSpain::esp_get_prov_siane(c(
+  #mapSpain::esp_get_prov_siane(c(
+  mapSpain::esp_get_prov(c(
     c("Barcelona","Girona","Lleida","Tarragona")
   )) |>
     transmute(

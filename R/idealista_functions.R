@@ -1,13 +1,23 @@
 
-read_data_catalunya <- function(file) {
-  read_csv(
+read_data_catalunya <- function(file='data/20231229_locations_with_price_evolution.csv', current_data='data/idealista_api_dades_joan.rds') {
+  # a partir d'un fitxer original recollim els noms, el match location_id a municipi no és senzill.
+  # 'llocs' hauria de ser un input en si mateix.
+  llocs <- read_csv(
     file,
     col_types = cols(...1 = col_skip(), period = col_date(format = "%Y-%m-%d"))
   ) |>
-    filter(province %in%
+    dplyr::filter(province %in%
       c("Barcelona","Girona","Lleida","Tarragona")
     ) |>
+    dplyr::select(location_id, province, town, district, neighborhood) |> 
     distinct()
+  
+  readRDS(current_data) |> 
+    dplyr::filter(stringi::stri_detect(file, regex='2024-11')) |> 
+    dplyr::select(-province, -town, -district, -neighborhood, -file) |> 
+    left_join(llocs) |> 
+    dplyr::filter(province %in% c("Barcelona","Girona","Lleida","Tarragona")) |> 
+    mutate(period = as.Date(period, format="%Y-%m-%d"))
 }
 
 
