@@ -262,10 +262,6 @@ server <- function(input, output, session) {
       idealista_sale_price_m2 <- atles_newest_values_map$idealista_sale_price[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
       incasol_lloguer_actual <- atles_newest_values_map$incasol_lloguer[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
       esforc_acces_25k_anuals <- atles_newest_values_map$esforc_acces_25k_anuals[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
-
-      print('----')
-      print(input$nivellMapa)
-      print(idealista_rent_price_m2)
       
       output$esforc_acces_25k_anuals_box <- renderValueBox({
         valueBox(
