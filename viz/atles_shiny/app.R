@@ -61,6 +61,10 @@ mapa_pincipal <- tabItem(
       # leaflet map
       width = 6,
       tags$style(type = "text/css", ".outer {position: fixed; top: 41px; left: 0; right: 0; bottom: 0; overflow: hidden; padding: 0}"),
+      selectInput("nivellMapa", "Tipus de mapa:",
+                  c("Municipis" = "municipi",
+                    "Barris" = "barri",
+                    "Província" = "prov")),
       leafletOutput("map", width = "100%", height = '655px'),
     ),
     column(
@@ -155,11 +159,15 @@ server <- function(input, output, session) {
   domain <- min(atles_newest_values_map$esforc_acces_25k_anuals,na.rm = T):max(atles_newest_values_map$esforc_acces_25k_anuals,na.rm = T)
   pal <- colorBin("magma", domain=domain, pretty = T,na.color = '#FF000000')
   output$map <- renderLeaflet({
-    leaflet(data = atles_newest_values_map) %>%
+    leaflet(
+        data = atles_newest_values_map |> filter(nivell == input$nivellMapa),
+        options = leafletOptions(zoomControl = FALSE)
+      ) %>%
       addTiles() %>%
       addPolygons(
-        stroke = F, smoothFactor = 0.3, fillOpacity = 0.6,
+        stroke = T, smoothFactor = 0.3, fillOpacity = 0.6,
         weight = 0.4,
+        color = "black", opacity = 1,
         fillColor = ~ pal(esforc_acces_25k_anuals),
         label = ~ paste0(nom, ": ", formatC(esforc_acces_25k_anuals, big.mark = ",")),
         layerId = ~iden
@@ -167,14 +175,14 @@ server <- function(input, output, session) {
   })
 
   ## RENT PRICE GRAPH
-  plot_rent_price_evolution_graph <- function(codi_exemple) {
+  plot_rent_price_evolution_graph <- function(codi_exemple, nivell) {
     log_info(paste("plot_rent_price_evolution_graph", as.character(codi_exemple)))
 
-    data <- incasol_lloguer_trimestral |> filter(iden == codi_exemple)
-    data_idealista <- idealista_prices |> filter(iden == codi_exemple)
+    data <- incasol_lloguer_trimestral |> filter(iden == codi_exemple & nivell == nivell)
+    data_idealista <- idealista_prices |> filter(iden == codi_exemple & nivell == nivell)
 
-    mitma_lloguer_mitja_p25_habitatge_collectiu <- atles_newest_values_map$mitma_lloguer_mitja_p25_habitatge_collectiu[atles_newest_values_map$iden == codi_exemple]
-    mitma_lloguer_mitja_p75_habitatge_collectiu <- atles_newest_values_map$mitma_lloguer_mitja_p75_habitatge_collectiu[atles_newest_values_map$iden == codi_exemple]
+    mitma_lloguer_mitja_p25_habitatge_collectiu <- atles_newest_values_map$mitma_lloguer_mitja_p25_habitatge_collectiu[atles_newest_values_map$iden == codi_exemple & atles_newest_values_map$nivell == nivell]
+    mitma_lloguer_mitja_p75_habitatge_collectiu <- atles_newest_values_map$mitma_lloguer_mitja_p75_habitatge_collectiu[atles_newest_values_map$iden == codi_exemple & atles_newest_values_map$nivell == nivell]
 
     hline <- function(y = 0, color = "black") {
       list(
@@ -244,17 +252,21 @@ server <- function(input, output, session) {
   observeEvent(
     input$map_shape_click,
     {
-      output$rent_price_evolution_graph <- renderPlotly(plot_rent_price_evolution_graph(rv()))
+      output$rent_price_evolution_graph <- renderPlotly(plot_rent_price_evolution_graph(rv(), input$nivellMapa))
       output$instruccions_inicials <- renderText('')
-      barri_nom <- atles_newest_values_map$barri_nom[atles_newest_values_map$iden == rv()]
-      municipi_nom <- atles_newest_values_map$municipi_nom[atles_newest_values_map$iden == rv()]
-      provincia_nom <- atles_newest_values_map$provincia_nom[atles_newest_values_map$iden == rv()]
-      idealista_stock_cadastre <- atles_newest_values_map$idealista_stock_cadastre[atles_newest_values_map$iden == rv()]
-      idealista_rent_price_m2 <- atles_newest_values_map$idealista_rent_price[atles_newest_values_map$iden == rv()]
-      idealista_sale_price_m2 <- atles_newest_values_map$idealista_sale_price[atles_newest_values_map$iden == rv()]
-      incasol_lloguer_actual <- atles_newest_values_map$incasol_lloguer[atles_newest_values_map$iden == rv()]
-      esforc_acces_25k_anuals <- atles_newest_values_map$esforc_acces_25k_anuals[atles_newest_values_map$iden == rv()]
+      barri_nom <- atles_newest_values_map$barri_nom[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
+      municipi_nom <- atles_newest_values_map$municipi_nom[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
+      provincia_nom <- atles_newest_values_map$provincia_nom[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
+      idealista_stock_cadastre <- atles_newest_values_map$idealista_stock_cadastre[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
+      idealista_rent_price_m2 <- atles_newest_values_map$idealista_rent_price[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
+      idealista_sale_price_m2 <- atles_newest_values_map$idealista_sale_price[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
+      incasol_lloguer_actual <- atles_newest_values_map$incasol_lloguer[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
+      esforc_acces_25k_anuals <- atles_newest_values_map$esforc_acces_25k_anuals[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
 
+      print('----')
+      print(input$nivellMapa)
+      print(idealista_rent_price_m2)
+      
       output$esforc_acces_25k_anuals_box <- renderValueBox({
         valueBox(
           paste(esforc_acces_25k_anuals, "%"), "d'un salari de 25k anual", icon = icon("briefcase", lib='font-awesome'),

@@ -6,8 +6,7 @@ get_atles_base_map_munis_i_bcn_barris <- function(locations_map) {
     filter(
       (nivell == 'municipi')
       | (nivell == 'barri' & municipi_nom == 'Barcelona')
-    ) |>
-    filter(!(nivell == 'municipi' & municipi_nom == 'Barcelona')) |>
+    ) |> 
     sf::st_as_sf()
 }
 
