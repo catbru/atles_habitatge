@@ -215,7 +215,7 @@ server <- function(input, output, session) {
       )
 
 
-    if (nrow(data_idealista)) {
+    if (nrow(data_idealista) > 1) {
       ay <- list(
         tickfont = list(color = "black"),
         overlaying = "y",
@@ -240,16 +240,11 @@ server <- function(input, output, session) {
     fig
   }
 
-  observeEvent(
-    input$map_shape_click,
-    output$rent_price_evolution_graph <- renderPlotly(plot_rent_price_evolution_graph(rv())),
-    ignoreInit = TRUE
-  )
-
   ## Indicadors
   observeEvent(
     input$map_shape_click,
     {
+      output$rent_price_evolution_graph <- renderPlotly(plot_rent_price_evolution_graph(rv()))
       output$instruccions_inicials <- renderText('')
       barri_nom <- atles_newest_values_map$barri_nom[atles_newest_values_map$iden == rv()]
       municipi_nom <- atles_newest_values_map$municipi_nom[atles_newest_values_map$iden == rv()]
