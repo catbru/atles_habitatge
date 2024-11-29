@@ -63,8 +63,7 @@ mapa_pincipal <- tabItem(
       tags$style(type = "text/css", ".outer {position: fixed; top: 41px; left: 0; right: 0; bottom: 0; overflow: hidden; padding: 0}"),
       selectInput("nivellMapa", "Tipus de mapa:",
                   c("Municipis" = "municipi",
-                    "Barris" = "barri",
-                    "Província" = "prov")),
+                    "Barris" = "barri")),
       leafletOutput("map", width = "100%", height = '655px'),
     ),
     column(
@@ -81,6 +80,9 @@ mapa_pincipal <- tabItem(
       ),
       fluidRow(
         h3(textOutput("instruccions_inicials"), align = "center"),
+        selectInput("metricaevol", "Mètrica:",
+                    c("Incasol Lloguer mitjà" = "incasol_lloguer",
+                      "Idealista lloguer m2" = "idealista_rent")),
         plotlyOutput("rent_price_evolution_graph")
       )
     )
@@ -175,84 +177,81 @@ server <- function(input, output, session) {
   })
 
   ## RENT PRICE GRAPH
-  plot_rent_price_evolution_graph <- function(codi_exemple, nivell) {
-    log_info(paste("plot_rent_price_evolution_graph", as.character(codi_exemple)))
+  plot_rent_price_evolution_graph <- function(codi_exemple, nivell, metrica) {
+    log_info(paste("plot_rent_price_evolution_graph", as.character(codi_exemple), metrica))
 
-    data <- incasol_lloguer_trimestral |> filter(iden == codi_exemple & nivell == nivell)
-    data_idealista <- idealista_prices |> filter(iden == codi_exemple & nivell == nivell)
-
-    mitma_lloguer_mitja_p25_habitatge_collectiu <- atles_newest_values_map$mitma_lloguer_mitja_p25_habitatge_collectiu[atles_newest_values_map$iden == codi_exemple & atles_newest_values_map$nivell == nivell]
-    mitma_lloguer_mitja_p75_habitatge_collectiu <- atles_newest_values_map$mitma_lloguer_mitja_p75_habitatge_collectiu[atles_newest_values_map$iden == codi_exemple & atles_newest_values_map$nivell == nivell]
-
-    hline <- function(y = 0, color = "black") {
-      list(
-        type = "line",
-        x0 = 0,
-        x1 = 1,
-        xref = "paper",
-        y0 = y,
-        y1 = y,
-        line = list(color = color, dash = "dash")
-      )
-    }
-
-    fig <- plot_ly(
-      data,
-      x = ~data_fi, y = ~incasol_lloguer,
-      name = "incasol", type = "scatter", mode = "lines",
-      line = list(color = "rgb(205, 12, 24)", width = 4)
-    ) %>%
-      layout(
-        title = "Evolució preu lloguer",
-        xaxis = list(title = ""),
-        yaxis = list(title = "<b>incasol</b> preu lloguer mitjà")
+    if (metrica == "incasol_lloguer") {
+      
+      data_incasol <- incasol_lloguer_trimestral |> filter(iden == codi_exemple & nivell == nivell)
+  
+      fig.incasol <- plot_ly(
+        data_incasol,
+        x = ~data_fi, y = ~incasol_lloguer,
+        name = "incasol", type = "scatter", mode = "lines",
+        line = list(color = "rgb(205, 12, 24)", width = 4)
       ) %>%
-      layout(
-        plot_bgcolor = "#ecf0f5",
-        paper_bgcolor = "#ecf0f5",
-        xaxis = list(
-          zerolinecolor = "#ffff",
-          zerolinewidth = 2,
-          gridcolor = "ffff"
-        ),
-        yaxis = list(
-          zerolinecolor = "#ffff",
-          zerolinewidth = 2,
-          gridcolor = "ffff"
-        )
-      )
-
-
-    if (nrow(data_idealista) > 1) {
-      ay <- list(
-        tickfont = list(color = "black"),
-        overlaying = "y",
-        side = "right",
-        title = "<b>idealista</b> preu €/m2 mitjà"
-      )
-
-      fig <- fig %>%
-        add_trace(
-          data = data_idealista,
-          x = ~data_fi, y = ~idealista_rent_price,
-          name = "idealista",
-          line = list(color = "green", width = 4), # , dash = 'dash'
-          yaxis = "y2"
-        ) %>%
         layout(
-          title = "Evolució preu lloguer", yaxis2 = ay,
+          title = "Lloguer mitjà segons Incasol",
           xaxis = list(title = ""),
           yaxis = list(title = "<b>incasol</b> preu lloguer mitjà")
+        ) %>%
+        layout(
+          plot_bgcolor = "#ecf0f5",
+          paper_bgcolor = "#ecf0f5",
+          xaxis = list(
+            zerolinecolor = "#ffff",
+            zerolinewidth = 2,
+            gridcolor = "ffff"
+          ),
+          yaxis = list(
+            zerolinecolor = "#ffff",
+            zerolinewidth = 2,
+            gridcolor = "ffff"
+          )
         )
+      return(fig.incasol)
+      
+    } else if (metrica == "idealista_rent") {
+      
+      data_idealista <- idealista_prices |> filter(iden == codi_exemple & nivell == nivell)
+    
+      fig.idealista <- plot_ly(
+        data_idealista,
+        x = ~data_fi, y = ~idealista_rent_price,
+        name = "idealista preu lloguer", type = "scatter", mode = "lines",
+        line = list(color = "rgb(205, 12, 24)", width = 4)
+      ) %>%
+        layout(
+          title = "Preu m2 segons Idealista",
+          xaxis = list(title = ""),
+          yaxis = list(title = "<b>idealista</b> preu €/m2 mitjà")
+        ) %>%
+        layout(
+          plot_bgcolor = "#ecf0f5",
+          paper_bgcolor = "#ecf0f5",
+          xaxis = list(
+            zerolinecolor = "#ffff",
+            zerolinewidth = 2,
+            gridcolor = "ffff"
+          ),
+          yaxis = list(
+            zerolinecolor = "#ffff",
+            zerolinewidth = 2,
+            gridcolor = "ffff"
+          )
+        )
+      return(fig.idealista)
+      
+    } else {
+      stop("metrica not found")
     }
-    fig
   }
 
   ## Indicadors
   observeEvent(
     input$map_shape_click,
     {
-      output$rent_price_evolution_graph <- renderPlotly(plot_rent_price_evolution_graph(rv(), input$nivellMapa))
+      output$rent_price_evolution_graph <- renderPlotly(plot_rent_price_evolution_graph(rv(), input$nivellMapa, input$metricaevol))
       output$instruccions_inicials <- renderText('')
       barri_nom <- atles_newest_values_map$barri_nom[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
       municipi_nom <- atles_newest_values_map$municipi_nom[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
