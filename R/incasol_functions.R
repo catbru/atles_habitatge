@@ -143,7 +143,6 @@ get_incasol_lloguer_trimestral_municipis <- function() {
     transmute(
       municipi_codi = stringr::str_extract(`Codi territorial`,'...$'),
       provincia_codi = stringr::str_extract(`Codi territorial`,'..'),
-      periode = 'pseudotrimestral',
       data_inici = case_when(
         Període == 'gener-setembre' ~ ymd(paste0(as.character(Any), '-01-01')),
         Període == 'juliol-setembre' ~ ymd(paste0(as.character(Any), '-07-01')),
@@ -162,10 +161,22 @@ get_incasol_lloguer_trimestral_municipis <- function() {
         Període == 'gener-desembre' ~ ymd(paste0(as.character(Any), '-12-31')),
         Període == 'octubre-desembre' ~ ymd(paste0(as.character(Any), '-12-31'))
       ),
+      periode = case_when(
+        Període == 'gener-setembre' ~ 'pseudotrimestral',
+        Període == 'juliol-setembre' ~ 'trimestral',
+        Període == 'abril-juny' ~ 'trimestral',
+        Període == 'gener-juny' ~ 'pseudotrimestral',
+        Període == 'gener-març' ~ 'trimestral',
+        Període == 'gener-desembre' ~ 'anual',
+        Període == 'octubre-desembre' ~ 'trimestral'
+      ),
       incasol_lloguer = Renda,
       incasol_nous_llogers = Habitatges
     ) |>
-    filter(!is.na(incasol_lloguer))
+    filter(
+      !is.na(incasol_lloguer) &
+      periode == 'trimestral'
+      )
 }
 
 

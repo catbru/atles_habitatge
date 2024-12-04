@@ -63,7 +63,8 @@ mapa_pincipal <- tabItem(
       tags$style(type = "text/css", ".outer {position: fixed; top: 41px; left: 0; right: 0; bottom: 0; overflow: hidden; padding: 0}"),
       selectInput("nivellMapa", "Tipus de mapa:",
                   c("Municipis" = "municipi",
-                    "Barris" = "barri")),
+                    "Barris" = "barri"),
+                  width = '50%'),
       leafletOutput("map", width = "100%", height = '655px'),
     ),
     column(
@@ -81,8 +82,13 @@ mapa_pincipal <- tabItem(
       fluidRow(
         h3(textOutput("instruccions_inicials"), align = "center"),
         selectInput("metricaevol", "Mètrica:",
-                    c("Incasol Lloguer mitjà" = "incasol_lloguer",
-                      "Idealista lloguer m2" = "idealista_rent")),
+                    c(
+                      "Incasol lloguer mitjà (per pis)" = "incasol_lloguer",
+                      "Incasol nous lloguers signats (nombre absolut)" = "incasol_nous",
+                      "Idealista lloguer mitjà (€/m2)" = "idealista_rent",
+                      "Idealista preu venta mitjà (€/m2)" = "idealista_sale"
+                      
+                      ), width = '100%'),
         plotlyOutput("rent_price_evolution_graph")
       )
     )
@@ -152,11 +158,6 @@ server <- function(input, output, session) {
     "Selecciona una unitat territorial per visualitzar-ne les dades disponibles"
   )
 
-  ## REACTIVITAT
-  rv <- reactiveVal()
-  observeEvent(input$map_shape_click, {rv(input$map_shape_click$id)})
-  output$poligonId <- renderText({rv()})
-
   ## MAPA
   domain <- min(atles_newest_values_map$esforc_acces_25k_anuals,na.rm = T):max(atles_newest_values_map$esforc_acces_25k_anuals,na.rm = T)
   pal <- colorBin("magma", domain=domain, pretty = T,na.color = '#FF000000')
@@ -210,6 +211,36 @@ server <- function(input, output, session) {
           )
         )
       return(fig.incasol)
+    } else if (metrica == "incasol_nous") {
+      
+      data_incasol <- incasol_lloguer_trimestral |> filter(iden == codi_exemple & nivell == nivell)
+      
+      fig.incasol <- plot_ly(
+        data_incasol,
+        x = ~data_fi, y = ~incasol_nous_llogers,
+        name = "incasol", type = "scatter", mode = "lines",
+        line = list(color = "rgb(205, 12, 24)", width = 4)
+      ) %>%
+        layout(
+          title = "Nous lloguers segons Incasol",
+          xaxis = list(title = ""),
+          yaxis = list(title = "<b>incasol</b> nombre de contractes")
+        ) %>%
+        layout(
+          plot_bgcolor = "#ecf0f5",
+          paper_bgcolor = "#ecf0f5",
+          xaxis = list(
+            zerolinecolor = "#ffff",
+            zerolinewidth = 2,
+            gridcolor = "ffff"
+          ),
+          yaxis = list(
+            zerolinecolor = "#ffff",
+            zerolinewidth = 2,
+            gridcolor = "ffff"
+          )
+        )
+      return(fig.incasol)
       
     } else if (metrica == "idealista_rent") {
       
@@ -242,25 +273,59 @@ server <- function(input, output, session) {
         )
       return(fig.idealista)
       
+    } else if (metrica == "idealista_sale") {
+      
+      data_idealista <- idealista_prices |> filter(iden == codi_exemple & nivell == nivell)
+      
+      fig.idealista <- plot_ly(
+        data_idealista,
+        x = ~data_fi, y = ~idealista_sale_price,
+        name = "idealista preu venta", type = "scatter", mode = "lines",
+        line = list(color = "rgb(205, 12, 24)", width = 4)
+      ) %>%
+        layout(
+          title = "Preu m2 segons Idealista",
+          xaxis = list(title = ""),
+          yaxis = list(title = "<b>idealista</b> preu €/m2 mitjà")
+        ) %>%
+        layout(
+          plot_bgcolor = "#ecf0f5",
+          paper_bgcolor = "#ecf0f5",
+          xaxis = list(
+            zerolinecolor = "#ffff",
+            zerolinewidth = 2,
+            gridcolor = "ffff"
+          ),
+          yaxis = list(
+            zerolinecolor = "#ffff",
+            zerolinewidth = 2,
+            gridcolor = "ffff"
+          )
+        )
+      return(fig.idealista)
+      
     } else {
       stop("metrica not found")
     }
   }
 
   ## Indicadors
+  ## REACTIVITAT
   observeEvent(
     input$map_shape_click,
     {
-      output$rent_price_evolution_graph <- renderPlotly(plot_rent_price_evolution_graph(rv(), input$nivellMapa, input$metricaevol))
+      iden_current <- input$map_shape_click$id
+      output$poligonId <- renderText({iden_current})
+      output$rent_price_evolution_graph <- renderPlotly(plot_rent_price_evolution_graph(iden_current, input$nivellMapa, input$metricaevol))
       output$instruccions_inicials <- renderText('')
-      barri_nom <- atles_newest_values_map$barri_nom[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
-      municipi_nom <- atles_newest_values_map$municipi_nom[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
-      provincia_nom <- atles_newest_values_map$provincia_nom[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
-      idealista_stock_cadastre <- atles_newest_values_map$idealista_stock_cadastre[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
-      idealista_rent_price_m2 <- atles_newest_values_map$idealista_rent_price[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
-      idealista_sale_price_m2 <- atles_newest_values_map$idealista_sale_price[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
-      incasol_lloguer_actual <- atles_newest_values_map$incasol_lloguer[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
-      esforc_acces_25k_anuals <- atles_newest_values_map$esforc_acces_25k_anuals[atles_newest_values_map$iden == rv() & atles_newest_values_map$nivell == input$nivellMapa]
+      barri_nom <- atles_newest_values_map$barri_nom[atles_newest_values_map$iden == iden_current & atles_newest_values_map$nivell == input$nivellMapa]
+      municipi_nom <- atles_newest_values_map$municipi_nom[atles_newest_values_map$iden == iden_current & atles_newest_values_map$nivell == input$nivellMapa]
+      provincia_nom <- atles_newest_values_map$provincia_nom[atles_newest_values_map$iden == iden_current & atles_newest_values_map$nivell == input$nivellMapa]
+      idealista_stock_cadastre <- atles_newest_values_map$idealista_stock_cadastre[atles_newest_values_map$iden == iden_current & atles_newest_values_map$nivell == input$nivellMapa]
+      idealista_rent_price_m2 <- atles_newest_values_map$idealista_rent_price[atles_newest_values_map$iden == iden_current & atles_newest_values_map$nivell == input$nivellMapa]
+      idealista_sale_price_m2 <- atles_newest_values_map$idealista_sale_price[atles_newest_values_map$iden == iden_current & atles_newest_values_map$nivell == input$nivellMapa]
+      incasol_lloguer_actual <- atles_newest_values_map$incasol_lloguer[atles_newest_values_map$iden == iden_current & atles_newest_values_map$nivell == input$nivellMapa]
+      esforc_acces_25k_anuals <- atles_newest_values_map$esforc_acces_25k_anuals[atles_newest_values_map$iden == iden_current & atles_newest_values_map$nivell == input$nivellMapa]
       
       output$esforc_acces_25k_anuals_box <- renderValueBox({
         valueBox(
@@ -287,7 +352,7 @@ server <- function(input, output, session) {
 
 
       municipi_declarat_tensionat_2023 <- ifelse(
-        atles_newest_values_map$municipi_declarat_tensionat_2023[atles_newest_values_map$iden == rv()] == 1,
+        atles_newest_values_map$municipi_declarat_tensionat_2023[atles_newest_values_map$iden == iden_current] == 1,
         'Sí',
         'No'
       )

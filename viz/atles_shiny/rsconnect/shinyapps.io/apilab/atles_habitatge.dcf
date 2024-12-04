@@ -5,7 +5,7 @@ account: apilab
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 11172026
-bundleId: 9436832
+bundleId: 9447638
 url: https://apilab.shinyapps.io/atles_habitatge/
 version: 1
 asMultiple: FALSE
